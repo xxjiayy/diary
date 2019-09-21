@@ -11,6 +11,7 @@
     		text-align: center;
     		line-height: 300px;
     		background-color: pink;
+    		font-size: 24px;
     	}
     	.dragbox {
     		display: inline-block;
@@ -22,9 +23,55 @@
     		border: 1px dashed #ccc;
     		text-align: center;
     		line-height: 40px;
+    		cursor: pointer;
+    		background-color: #fff;
     	}
     </style>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script type="text/javascript">
+    	$(document).ready(function() {
+			var elDustbin = $('.dustbin')[0];
+			var elDrags = $('.draglist');
+			var elRemind = $('.dragremind')[0];
+			var elDrag = null;
+			for (var i = 0; i < elDrags.length; i += 1) {
+				elDrags[i].onselectstart = function () {  // 1.onselect事件和onselectstart事件
+					return false;
+				}
+				elDrags[i].ondragstart = function(ev) {
+					// 拖拽开始的动作
+					ev.dataTransfer.effectAllowed = "move"; //拖拽效果 effectAllowed
+					ev.dataTransfer.setData("text", ev.target.innerHTML);
+					ev.dataTransfer.setDragImage(ev.target, 0, 0);
+					elDrag = ev.target;
+					return true;
+				}
+				elDrags[i].ondragend = function(ev) {
+					// 拖拽结束
+					ev.dataTransfer.clearData("text");
+					elDrag = null;
+				}
+			}
+			elDustbin.ondragover = function(ev) {
+				// 拖拽元素在目标元素头上移动的时候
+				ev.preventDefault();
+				return true;
+			}
+			elDustbin.ondragenter = function(ev) {
+				// 拖拽元素进入目标元素头上的时候
+				this.style.color = '#fff';
+				return true;
+			}
+			elDustbin.ondrop = function(ev) {
+				/*拖拽元素进入目标元素头上，同时鼠标松开的时候*/
+				if(elDrag) {
+					elRemind.innerHTML = '<strong>"' + elDrag.innerHTML + '"</strong>被扔进了垃圾箱';
+					elDrag.parentNode.removeChild(elDrag);
+				}
+				this.style.color = '#000';
+				return false;
+			}
+    	});
     </script>
   </head>
   <body>

@@ -1,0 +1,8 @@
+1. onselect事件和onselectstart事件
+（1）onselect事件
+支持该事件的标签：<input type="text"> , <textarea>
+支持该事件的js对象： window
+比如当选中input文本输入框中的内容时，就会触发onselect事件
+（2）onselectstart事件
+支持该事件的标签：几乎可以用于所有对象，但不被input和textarea标签支持
+事件发生于对象被选中动作的开始，一般用于禁止被选中(当鼠标连续点击的时候)（onselectstart = "return false"）
