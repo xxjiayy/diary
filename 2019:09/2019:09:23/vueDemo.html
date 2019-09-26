@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>vue demo</title>
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<style type="text/css">
+		.active {
+			font-size: 24px;
+			font-weight: 700;
+		}
+		.text-danger {
+			color: red;
+		}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div>
+			<p>1.声明式渲染</p>
+			{{message}}
+			<span v-bind:title="message2">
+				鼠标悬停几秒钟查看此处动态绑定的提示信息
+			</span>
+		</div>
+		<div>
+			<p>2.条件与循环</p>
+			<span v-if="seen">现在你看到我了</span>
+			<span v-show="seen">现在你看到我了</span>
+			<span style="visibility: hidden">现在你看到我了</span>
+			<div v-if="seen">
+				<span>现在你看到我了{{seenContent.a.b}}</span>
+			</div>
+			<!-- <div v-show="seen">
+				<span>现在你看到我了{{seenContent.a.b}}</span>
+			</div> --> 
+			<!-- 报错 b undefined -->
+			<ol>
+			   	<li v-for="todo in todos">
+			      {{ todo.text }}
+			   	</li>
+			</ol>
+		</div>
+		<div>
+			<p>3.处理用户输入</p>
+			<p>{{ message }}</p>
+  			<button v-on:click="reverseMessage">反转消息</button>
+  			<p>{{ message }}</p>
+  			<input v-model="message">
+		</div>
+		<div>
+			<p>4.组件化应用构建</p>
+			<ol>
+				<todo-item
+				  v-for="item in groceryList"
+				  v-bind:todo="item"
+				  v-bind:key="item.id"
+				></todo-item>
+			</ol>
+		</div>
+		<div>
+			<p>5.数据与方法</p>
+			<span>{{obj.message3}}</span>
+			<span>{{obj2.message3}}</span>
+			<button v-on:click="freezeMessage">没有响应式</button> <br>
+			<p>{{ obj.message3 }}</p>
+  			<input v-model="obj.message3">
+		</div>
+		<div>
+			<p>6.插值</p>
+			<div v-once>
+				{{message4}} <br>
+				<span>{{message4}}</span>
+			</div>
+			<div>
+				{{message4}} <br>
+				<span v-once>{{message4}}</span>
+			</div>
+			<button v-on:click="onceMessage">v-once指令</button> <br>
+			<p>Using mustaches: {{ rawHtml }}</p>
+			<p>Using v-html directive: <div v-html="rawHtml"></div></p>
+			<button v-bind:disabled="isButtonDisabled">Button</button>
+			<p>{{ message.split('').reverse().join('') }}</p>
+			<p>{{new Date().toLocaleString()}}</p>
+		</div>
+		<div>
+			<p>7.计算属性</p>
+			<div>
+			  模板表达式：{{ message.split('').reverse().join('') }}
+			</div>
+			<div>
+				计算属性：{{cptReverseMsg}}
+			</div>
+			<div>
+				通过方法计算：{{mReverseMsg () }}
+			</div>
+		</div>
+		<div>
+			<p>8.class与style绑定</p>
+			<div :class="{ active: isActive, 'text-danger': hasError }">
+				{{message}}
+			</div>
+		</div>
+		<div>
+			<p>9.v-if条件渲染</p>
+			<template v-if="true">
+				<h1>Xiejiayun's example</h1>
+			</template>
+			<div v-if="true">
+				<h1>Xiejiayun's example</h1>
+			</div>
+			<button @click="changeLogin">Button</button>
+			<template v-if="loginType === 'username'">
+			  	<label>Username</label>
+			  	<input placeholder="Enter your username">
+			</template>
+			<template v-else>
+			  	<label>Email</label>
+			  	<input placeholder="Enter your email address">
+			</template>
+			<template v-if="loginType === 'username'">
+			  <label>Username</label>
+			  <input placeholder="Enter your username" key="username-input">
+			</template>
+			<template v-else>
+			  <label>Email</label>
+			  <input placeholder="Enter your email address" key="email-input">
+			</template>
+		</div>
+		<div>
+			<p>10.列表渲染</p>
+			<template>
+				<button @click="changeItems">Button</button>
+				<div v-for="item in items">
+					<label>{{item}}</label>
+					<input type="text" placeholder="please input">
+				</div>
+				<p>有key的v-for循环</p>
+				<div v-for="(item,index) in items" :key="index">
+					<label>{{item}}</label>
+					<input type="text" placeholder="please input">
+				</div>
+				<div>{{itemsMethod}}</div>
+				<button @click="filterNumber">Filter Button</button> <br>
+				<!-- 不能使用key -->
+				<template v-for="(item,index) in items">
+				  	<label>{{item}}</label>
+				  	<input placeholder="Eplease input">
+				</template>
+			</template>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	Vue.component('todo-item', {
+	  props: ['todo'],
+	  template: '<li>{{ todo.text }}</li>'
+	});
+	var obj = {
+		message3: 'Hello Vue!'
+	};
+	var obj2 = {
+		message3: 'Hello Vue!'
+	};
+
+
+	Object.freeze(obj);
+
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			message: 'Hello Vue!',
+			message2: '页面加载于 ' + new Date().toLocaleString(),
+			seen: false,
+			seenContent: {},
+			todos: [
+		      { text: '学习 JavaScript' },
+		      { text: '学习 Vue' },
+		      { text: '整个牛项目' }
+		    ],
+		    groceryList: [
+		      { id: 0, text: '蔬菜' },
+		      { id: 1, text: '奶酪' },
+		      { id: 2, text: '随便其它什么人吃的东西' }
+		    ],
+		    obj: obj,
+		    obj2: obj2,
+		    message4: 'Hello Vue!',
+		    rawHtml: '<span style="color: red">This is red!!</span>',
+		    isButtonDisabled: null,
+		    question: '',
+    		answer: 'I cannot give you an answer until you ask a question!',
+    		isActive: true,
+  			hasError: true,
+  			loginType: 'username',
+  			items: ['姓名', '性别', '民族'],
+  			itemsMethod: ['姓名', '性别', '民族'],
+  			numbers: [ 1, 2, 3, 4, 5 ]
+		},
+		methods: {
+			reverseMessage: function () {
+		      	this.message = this.message.split('').reverse().join('');
+		    },
+		    freezeMessage: function () {
+		    	this.obj.message3 = 'freeze'
+		    	this.obj2.message3 = 'freeze'
+		    },
+		    onceMessage: function() {
+		    	this.message4 = 'once message: Hello Vue!'
+		    },
+		    mReverseMsg: function() {
+				return this.message.split('').reverse().join('');
+			},
+			changeLogin: function() {
+				if (this.loginType === 'username') {
+					this.loginType = ''
+				} else {
+					this.loginType = 'username'
+				}
+			},
+			changeItems: function() {
+				// this.items.unshift('学号');
+				// this.itemsMethod = this.itemsMethod.join('..');
+				// this.itemsMethod.reverse();
+				// 不能响应
+				// this.items[2] = '学号';
+				// this.items.slice(0,1);
+				//在响应式系统内触发状态更新
+				// Vue.set(this.items, 2, '学号');
+				vm.$set(this.items, 2, '学号');
+			},
+			filterNumber: function() {
+				console.log(this.numbers);
+				console.log(this.evenNumbers[0]);
+			}
+		},
+		computed: {
+			cptReverseMsg: function() {
+				return this.message.split('').reverse().join('');
+			},
+			evenNumbers: function () {
+			    return this.numbers.filter(function (number) {
+			      return number % 2 === 0
+			    })
+  			}
+		}
+	})
+</script>
+</html>

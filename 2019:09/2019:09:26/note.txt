@@ -1,0 +1,73 @@
+vue数据双向绑定源码分析：
+1. 创建vue实例vm
+2. 进行数据代理，this.xxx ——> vm._data.xxx
+3. 计算属性进行代理，this.xxx ——> vm.computed.xxx
+4. 对data中所有层次的属性通过数据劫持实现数据绑定 observer()
+（1）先对data第一层属性名 new Dep() { id: 标识, subs: [] 几个相关的watcher容器 }
+（2）如果发现data[key]还是一个Object的话，将对象中的每个属性名再做一遍劫持（以此递归）
+（3）给data对象重新定义属性描述符，添加get/set方法（数据代理是对vm定义属性描述符）
+get方法：
+返回相关属性值；建立dep与当前watcher的一个关联关系
+set方法：
+将新的属性值赋值给对应属性；如果对新的属性值是对象的话，定义属性描述符，创建新的dep，重新建立watcher关系；notify() 通知该属性dep中关联的watcher
+
+5.模板解析
+（1）创建一个编译对象
+（2）对当前编译对象的内容放进一个文档碎片
+（3）将碎片中所有子节点进行解析分类（属于什么指令、大括号表达式等）
+（4）v-model数据双向绑定
+model: funcion(node, vm, exp) {
+	// 显示该节点 exp 表达式对应的属性值
+	this.bind(node, vm, exp, 'model');
+
+	var me = this, val = this._getVMVal(vm, exp);
+
+	// 添加input监听，给vm数据代理设置新值，同样会间接调用数据劫持的set方法
+	node.addEventListener('input', function(e) {
+		ver newValue = e.target.value;
+		if (val === newValue) {
+			return;
+		}
+		me._setVMVal(vm, exp, newValue);
+		val = newValue;
+	})
+}
+
+bind: function(node, vm, exp, dir) {
+	// 得到跟新节点的函数
+	var updaterFn = updater[dir + 'Updater'];
+
+	// 通过数据代理获得当前节点的属性值
+	// 数据代理的get方法触发间接调用data数据劫持的get方法
+	updaterFn && updaterFn(node, this._getVMVal(vm, exp));
+
+	给当前 exp 表达式 创建一个watcher
+	new Watcher(vm, exp, function(value, oldValue) {
+		updaterFn && updaterFn(node, value, oldValue);
+	});
+}
+
+
+
+总结：
+数据双向绑定会出现的情况：
+1.输入input
+（1）input监听，vm数据代理的set方法改变_data属性的值，同时间接触发data数据劫持的set方法，通知跟该属性dep notify相关的所有的watcher
+（2）模板解析，取当前节点 exp 表达式值时，bind方法中创建watcher实例
+watcher实例：
+new Watcher(...) {cd: 跟新当前节点node.value的回调; vm: vue实例; expOrFn: exp指令表达式; depIds: {} 所有相关dep的id Map; value: exp表达式的属性值}
+获取value（this.get()）在get方法中，将当前的watcher对象赋值给Dep.target，然后从vm数据代理中取值，间接触发data中的数据劫持get方法，导致执行 dep.depend()，将该exp的watcher与表达式的每一层dep都建立联系，表达式中哪一层发生变化都会notify该watcher。
+（3）逻辑上修改数据
+this.chlid.name= 'joycee'
+改变属性值，name的set被间接触发，notify相关wacther
+this.child = {name: 'joycee'}
+child.name属性发生改变，创建了新的dep，之前的关联关系失效
+child的set被间接触发，observer({name: 'joycee'})，重新给name创建dep；child的dep notify相关的watcher，包括exp = child.name的watcher，watcher更新的时候执行（this.get()，再次与child.name的dep建立新的关联，并且通过cb()显示新的值。当child.name值改变的时候依然可以通过新的联系通知相关watcher。
+
+
+
+
+
+
+
+
