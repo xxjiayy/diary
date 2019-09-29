@@ -1,4 +1,23 @@
-vue数据双向绑定源码分析：
+实现数据绑定大致有：
+发布者-订阅者模式（backbone.js）
+脏值检查（angular.js）
+数据劫持（vue.js）
+
+实现数据双向绑定的底层思想：
+1.需要一个方法识别哪个UI元素被绑定了相应的属性
+2.需要监视UI元素和相应属性变化
+3.需要变化传播到绑定的对象和元素
+
+实现mvvm双向绑定：
+1、实现一个数据监听器Observer，能够对数据对象的所有属性进行监听，如有变动可拿到最新值并通知订阅者
+2、实现一个指令解析器Compile，对每个元素节点的指令进行扫描和解析，根据指令模板替换数据，以及绑定相应的更新函数
+3、实现一个Watcher，作为连接Observer和Compile的桥梁，能够订阅并收到每个属性变动的通知，执行指令绑定的相应回调函数，从而更新视图
+4、mvvm入口函数，整合以上三者
+
+
+
+一、vue数据双向绑定源码分析：
+
 1. 创建vue实例vm
 2. 进行数据代理，this.xxx ——> vm._data.xxx
 3. 计算属性进行代理，this.xxx ——> vm.computed.xxx
@@ -67,7 +86,296 @@ child的set被间接触发，observer({name: 'joycee'})，重新给name创建dep
 
 
 
+二、vue3.0为何弃用Object.defineProperty而选择Proxy
+尤大大已经宣称，在3.0中 双向绑定将会使用Proxy来代替2.x版本的Object.defineProperty。
+1.这两种都是基于数据劫持实现双向绑定。
+2.Object.defineProperty的缺陷：无法监听数组下标的变化，导致无法通过数据索引改变数组的值、设置数组的length，实时响应。为了解决这个问题，重写了7个数组的方法。
+同时Object.defineProperty只能劫持对象的属性，因此需要对对象的每个属性进行遍历，通过递归 + 遍历data对象进行数据监听，如果属性还是对象的话，需要进行深度遍历。可见劫持一个对象是更好的选择。
+3.Proxy
+（1）优点：
+可以劫持整个对象，并返回一个新对象
+有13种劫持操作
+（2）缺点：
+Proxy是es6的新特性，兼容性不好，这个属性无法用polyfill来兼容
+4.Proxy作为代理模式主要体现的三个方面：
+（1）拦截和监视外部对对象的访问
+（2）降低函数或类的复杂度
+（3）在复杂操作前对操作进行校验或对所需资源进行管理
+5.handler对象，13种劫持操作
+
+// 在读取代理对象的原型时触发该操作，比如在执行 Object.getPrototypeOf(proxy) 时。
+handler.getPrototypeOf()
+
+// 在设置代理对象的原型时触发该操作，比如在执行 Object.setPrototypeOf(proxy, null) 时。
+handler.setPrototypeOf()
+ 
+// 在判断一个代理对象是否是可扩展时触发该操作，比如在执行 Object.isExtensible(proxy) 时。
+handler.isExtensible()
+
+// 在让一个代理对象不可扩展时触发该操作，比如在执行 Object.preventExtensions(proxy) 时。
+handler.preventExtensions()
+
+// 在获取代理对象某个属性的属性描述时触发该操作，比如在执行 Object.getOwnPropertyDescriptor(proxy, "foo") 时。
+handler.getOwnPropertyDescriptor()
+ 
+// 在定义代理对象某个属性时的属性描述时触发该操作，比如在执行 Object.defineProperty(proxy, "foo", {}) 时。
+handler.defineProperty()
+ 
+// 在判断代理对象是否拥有某个属性时触发该操作，比如在执行 "foo" in proxy 时。
+handler.has()
+
+// 在读取代理对象的某个属性时触发该操作，比如在执行 proxy.foo 时。
+handler.get()
+ 
+// 在给代理对象的某个属性赋值时触发该操作，比如在执行 proxy.foo = 1 时。
+handler.set()
+
+// 在删除代理对象的某个属性时触发该操作，比如在执行 delete proxy.foo 时。
+handler.deleteProperty()
+
+// 在获取代理对象的所有属性键时触发该操作，比如在执行 Object.getOwnPropertyNames(proxy) 时。
+handler.ownKeys()
+
+// 在调用一个目标对象为函数的代理对象时触发该操作，比如在执行 proxy() 时。
+handler.apply()
+ 
+// 在给一个目标对象为构造函数的代理对象构造实例时触发该操作，比如在执行new proxy() 时。
+handler.construct()
+
+6.Proxy使用场景
+（1）实现私有变量
+这个变量只能在对象中访问，不能通过target[key]访问
+
+let api = {  
+    _apiKey: '123abc456def',
+    getUsers: function(){ }, 
+    getUser: function(userId){ }, 
+    setUser: function(userId, config){ }
+};
+
+const RESTRICTED = ['_apiKey'];
+api = new Proxy(api, {  
+    get(target, key, proxy) {
+        if(RESTRICTED.indexOf(key) > -1) {
+            throw Error(`${key} is restricted. Please see api documentation for further info.`);
+        }
+        return Reflect.get(target, key, proxy);
+    },
+    set(target, key, value, proxy) {
+        if(RESTRICTED.indexOf(key) > -1) {
+            throw Error(`${key} is restricted. Please see api documentation for further info.`);
+        }
+        return Reflect.get(target, key, value, proxy);
+    }
+});
+
+// 以下操作都会抛出错误
+console.log(api._apiKey);
+api._apiKey = '987654321'; 
+
+（2）抽离校验模块
+// 1.检验数据类型
+function createValidator(target, validator) {  
+    return new Proxy(target, {
+        _validator: validator,
+        set(target, key, value, proxy) {
+            if (target.hasOwnProperty(key)) {
+                let validator = this._validator[key];
+                if (!!validator(value)) {
+                    return Reflect.set(target, key, value, proxy);
+                } else {
+                    throw Error(`Cannot set ${key} to ${value}. Invalid.`);
+                }
+            } else {
+                throw Error(`${key} is not a valid property`)
+            }
+        }
+    });
+}
+
+const personValidators = {  
+    name(val) {
+        return typeof val === 'string';
+    },
+    age(val) {
+        return typeof age === 'number' && age > 18;
+    }
+}
+class Person {  
+    constructor(name, age) {
+        this.name = name;
+        this.age = age;
+        return createValidator(this, personValidators);
+    }
+}
+
+const bill = new Person('Bill', 25);
+
+// 以下操作都会报错
+bill.name = 0;  
+bill.age = 'Bill';  
+bill.age = 15;  
+
+// 2.检查函数是否接收了类型和数量都正确的参数
+let obj = {  
+    pickyMethodOne: function(obj, str, num) { /* ... */ },
+    pickyMethodTwo: function(num, obj) { /*... */ }
+};
+
+const argTypes = {  
+    pickyMethodOne: ["object", "string", "number"],
+    pickyMethodTwo: ["number", "object"]
+};
+
+obj = new Proxy(obj, {  
+    get: function(target, key, proxy) {
+        var value = target[key];
+        return function(...args) {
+            var checkArgs = argChecker(key, args, argTypes[key]);
+            return Reflect.apply(value, target, args);
+        };
+    }
+});
+
+function argChecker(name, args, checkers) {  
+    for (var idx = 0; idx < args.length; idx++) {
+        var arg = args[idx];
+        var type = checkers[idx];
+        if (!arg || typeof arg !== type) {
+            console.warn(`You are incorrectly implementing the signature of ${name}. Check param ${idx + 1}`);
+        }
+    }
+}
+
+obj.pickyMethodOne();  
+// > You are incorrectly implementing the signature of pickyMethodOne. Check param 1
+// > You are incorrectly implementing the signature of pickyMethodOne. Check param 2
+// > You are incorrectly implementing the signature of pickyMethodOne. Check param 3
+
+obj.pickyMethodTwo("wopdopadoo", {});  
+// > You are incorrectly implementing the signature of pickyMethodTwo. Check param 1
+
+// No warnings logged
+obj.pickyMethodOne({}, "a little string", 123);  
+obj.pickyMethodOne(123, {});
+
+（3）访问日志
+let api = {  
+    _apiKey: '123abc456def',
+    getUsers: function() { /* ... */ },
+    getUser: function(userId) { /* ... */ },
+    setUser: function(userId, config) { /* ... */ }
+};
+
+function logMethodAsync(timestamp, method) {  
+    setTimeout(function() {
+        console.log(`${timestamp} - Logging ${method} request asynchronously.`);
+    }, 0)
+}
+
+api = new Proxy(api, {  
+    get: function(target, key, proxy) {
+        var value = target[key];
+        return function(...arguments) {
+            logMethodAsync(new Date(), key);
+            return Reflect.apply(value, target, arguments);
+        };
+    }
+});
+
+api.getUsers();
+
+（4）预警和拦截
+let dataStore = {  
+    noDelete: 1235,
+    oldMethod: function() {/*...*/ },
+    doNotChange: "tried and true"
+};
+
+const NODELETE = ['noDelete'];  
+const NOCHANGE = ['doNotChange'];
+const DEPRECATED = ['oldMethod'];  
+
+dataStore = new Proxy(dataStore, {  
+    set(target, key, value, proxy) {
+        if (NOCHANGE.includes(key)) {
+            throw Error(`Error! ${key} is immutable.`);
+        }
+        return Reflect.set(target, key, value, proxy);
+    },
+    deleteProperty(target, key) {
+        if (NODELETE.includes(key)) {
+            throw Error(`Error! ${key} cannot be deleted.`);
+        }
+        return Reflect.deleteProperty(target, key);
+
+    },
+    get(target, key, proxy) {
+        if (DEPRECATED.includes(key)) {
+            console.warn(`Warning! ${key} is deprecated.`);
+        }
+        var val = target[key];
+
+        return typeof val === 'function' ?
+            function(...args) {
+                Reflect.apply(target[key], target, args);
+            } :
+            val;
+    }
+});
+
+// these will throw errors or log warnings, respectively
+dataStore.doNotChange = "foo";  
+delete dataStore.noDelete;  
+dataStore.oldMethod();
+
+（5）过滤操作
+let obj = {  
+    getGiantFile: function(fileId) {/*...*/ }
+};
+
+obj = new Proxy(obj, {  
+    get(target, key, proxy) {
+        return function(...args) {
+            const id = args[0];
+            let isEnroute = checkEnroute(id);
+            let isDownloading = checkStatus(id);      
+            let cached = getCached(id);
+
+            if (isEnroute || isDownloading) {
+                return false;
+            }
+            if (cached) {
+                return cached;
+            }
+            return Reflect.apply(target[key], target, args);
+        }
+    }
+});
+
+（6）中断代理
+Proxy 支持随时取消对 target 的代理，这一操作常用于完全封闭对数据或接口的访问。在下面的示例中，我们使用了 Proxy.revocable 方法创建了可撤销代理的代理对象：
+
+let sensitiveData = { username: 'devbryce' };
+const {sensitiveData, revokeAccess} = Proxy.revocable(sensitiveData, handler);
+function handleSuspectedHack(){  
+    revokeAccess();
+}
+
+// logs 'devbryce'
+console.log(sensitiveData.username);
+handleSuspectedHack();
+// TypeError: Revoked
+console.log(sensitiveData.username);
+
+7.Reflect
+Reflect 是一个内置的对象，它提供拦截 JavaScript 操作的方法。这些方法与处理器对象的方法相同。Reflect不是一个函数对象，因此它是不可构造的。
 
 
 
 
+
+引用： http://blog.poetries.top/2018/12/21/es6-proxy/
+proxyVue: https://github.com/nightzing/vue3-Proxy/blob/master/proxyVue.html
+
+双向绑定，defineProperty set方法中报错
