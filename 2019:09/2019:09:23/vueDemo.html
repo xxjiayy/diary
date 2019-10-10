@@ -148,6 +148,13 @@
 				</template>
 			</template>
 		</div>
+		<div>
+			<p>localStorage</p>
+			<div>
+				<button @click="addItem">添加</button>
+				<button @click="viewItem">显示</button>
+			</div>
+		</div>
 	</div>
 </body>
 <script type="text/javascript">
@@ -231,6 +238,13 @@
 			filterNumber: function() {
 				console.log(this.numbers);
 				console.log(this.evenNumbers[0]);
+			},
+			addItem: function() {
+				window.localStorage.setItem('localItem', JSON.stringify('1'))
+			},
+			viewItem: function() {
+				var item = window.localStorage.getItem('localItem')
+				console.log(JSON.parse(item || '[]'))
 			}
 		},
 		computed: {
