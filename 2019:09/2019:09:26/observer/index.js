@@ -71,7 +71,7 @@ export class Observer {
   walk (obj: Object) {
     const keys = Object.keys(obj) // 取出对象属性名
     for (let i = 0; i < keys.length; i++) {
-      defineReactive(obj, keys[i], obj[keys[i]]) //定义响应式
+      defineReactive(obj, keys[i], obj[keys[i]]) //定义响应式，实现数据与界面的关联
     }
   }
 
@@ -116,7 +116,7 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
  */
 export function observe (value: any, asRootData: ?boolean): Observer | void {
   if (!isObject(value) || value instanceof VNode) {
-    return
+    return  // 不是对象就return
   }
   let ob: Observer | void
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
@@ -128,7 +128,7 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
     Object.isExtensible(value) &&
     !value._isVue
   ) {
-    ob = new Observer(value)
+    ob = new Observer(value)  // 创建Observer实例
   }
   if (asRootData && ob) {
     ob.vmCount++
@@ -179,7 +179,7 @@ export function defineReactive (
       /* eslint-disable no-self-compare */
       if (newVal === value || (newVal !== newVal && value !== value)) {
         return
-      }
+      } // 判断是不是新值
       /* eslint-enable no-self-compare */
       if (process.env.NODE_ENV !== 'production' && customSetter) {
         customSetter()

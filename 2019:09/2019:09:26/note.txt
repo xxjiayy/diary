@@ -4,8 +4,8 @@
 数据劫持（vue.js）
 
 实现数据双向绑定的底层思想：
-1.需要一个方法识别哪个UI元素被绑定了相应的属性
-2.需要监视UI元素和相应属性变化
+1.需要一个方法识别哪个元素被绑定了相应的属性
+2.需要监视元素和相应属性变化
 3.需要变化传播到绑定的对象和元素
 
 实现mvvm双向绑定：
@@ -54,7 +54,7 @@ model: funcion(node, vm, exp) {
 
 bind: function(node, vm, exp, dir) {
 	// 得到跟新节点的函数
-	var updaterFn = updater[dir + 'Updater'];
+	var updaterFn = updater[dir + 'Updater']; // 返回回调行数，将对应的新值赋给node.value
 
 	// 通过数据代理获得当前节点的属性值
 	// 数据代理的get方法触发间接调用data数据劫持的get方法
@@ -83,14 +83,15 @@ this.child = {name: 'joycee'}
 child.name属性发生改变，创建了新的dep，之前的关联关系失效
 child的set被间接触发，observer({name: 'joycee'})，重新给name创建dep；child的dep notify相关的watcher，包括exp = child.name的watcher，watcher更新的时候执行（this.get()，再次与child.name的dep建立新的关联，并且通过cb()显示新的值。当child.name值改变的时候依然可以通过新的联系通知相关watcher。
 
-
+v-model = "child.name"
+this.child = {name: 'joycee'}
 
 
 二、vue3.0为何弃用Object.defineProperty而选择Proxy
 尤大大已经宣称，在3.0中 双向绑定将会使用Proxy来代替2.x版本的Object.defineProperty。
 1.这两种都是基于数据劫持实现双向绑定。
 2.Object.defineProperty的缺陷：无法监听数组下标的变化，导致无法通过数据索引改变数组的值、设置数组的length，实时响应。为了解决这个问题，重写了7个数组的方法。
-同时Object.defineProperty只能劫持对象的属性，因此需要对对象的每个属性进行遍历，通过递归 + 遍历data对象进行数据监听，如果属性还是对象的话，需要进行深度遍历。可见劫持一个对象是更好的选择。
+同时Object.defineProperty只能劫持对象的属性，因此需要对对象的每个属性进行遍历，通过递归 + 遍历data对象属性进行数据监听，如果属性还是对象的话，需要进行深度遍历。可见劫持一个对象是更好的选择。
 3.Proxy
 （1）优点：
 可以劫持整个对象，并返回一个新对象

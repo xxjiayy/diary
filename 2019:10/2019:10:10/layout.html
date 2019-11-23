@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>布局</title>
+	<style type="text/css">
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		.left_one {
+			width: 100px;
+			height: 100px;
+			background-color: pink;
+			float: left;
+		}
+		.right_one {
+			width: 100%;
+			height: 100px;
+			background-color: #0f0;
+			margin-left: 110px;
+		}
+		.left_two {
+			width: 100px;
+			height: 100px;
+			background-color: pink;
+			float: left;
+		}
+		#right-fix {
+		    float: right;
+		    width: 100%;
+		    margin-left: -100px; /*正值大于或等于#left的宽度,才能显示在同一行*/
+		}
+		.right_two {
+			/*float: right; 由于width100%，无法和左列定宽同一列,直接换行
+			width: 100%;
+			margin-right: -110px;*/
+			margin-left: 110px;
+			background-color: #0f0;
+			height: 100px;
+		}
+		.left_three {
+			width: 100px;
+			height: 100px;
+			background-color: pink;
+			float: left;
+		}
+		.right_three {
+			float: right; /*由于width100%，无法和左列定宽同一列,直接换行*/
+			width: 100%;
+			margin-right: -110px;
+			background-color: #0f0;
+			height: 100px;
+		}
+		.left_four {
+			width: 100px;
+			height: 100px;
+			background-color: pink;
+			float: left;
+		}
+		.right_four {
+			background-color: #0f0;
+			height: 100px;
+			overflow: hidden; /*BFC的区域不会与浮动盒子重叠*/
+		}
+	</style>
+</head>
+<body>
+	<!-- 两栏布局 -->
+	<!-- 浮动 1 -->
+	<div class="left_one">左列定宽</div>
+	<div class="right_one">右列自适应</div>
+	<!-- 浮动 2 -->
+	<div>
+		<div style="margin-top: 10px;"></div>
+		<div class="left_two">左列定宽</div>
+		<div id="right-fix">
+		    <div class="right_two">右列自适应</div>
+		</div>
+	</div>
+	<!-- 浮动 3 -->
+	<div>
+		<div class="left_three">左列定宽</div>
+		<div class="right_three">右列自适应</div>
+	</div>
+	<!-- 浮动 4 float + overflow-->
+	<div>
+		<div class="left_four">左列定宽</div>  <!-- 为什么盒子会上浮,不与浮动盒子发生重叠 -->
+		<div class="right_four">右列自适应</div>
+	</div>
+</body>
+</html>

@@ -11,6 +11,63 @@
 		.text-danger {
 			color: red;
 		}
+		.bfc {
+			/*overflow: hidden;*/
+			/*position: absolute;*/
+		}
+		.border {
+			border: 1px solid #ccc;
+		}
+		.margin_one {
+			margin: 10px;
+			padding: 10px;
+			border: 1px solid #ccc;
+		}
+		.margin_two {
+			margin: 10px;
+			border: 1px solid #ccc;
+		}
+		.box {
+			position: relative;
+			border: 10px solid #ccc;
+			padding: 10px;
+			margin: 10px;
+			width: 700px;
+			height: 300px;
+		}
+		.absolute_box {
+			position: absolute;
+			left: 0px;
+			top: 0px;
+			width: 200px;
+			height: 200px;
+			/*margin: 10px;*/
+			border: 20px solid green;
+			padding: 10px;
+			background-color: pink;
+		}
+		.float_box {
+			float: left;
+			width: 200px;
+			height: 200px;
+			margin-right: 10px;
+			border: 20px solid green;
+			padding: 10px;
+			background-color: pink;
+		}
+		.other_box {
+			width: 300px;
+			height: 200px;
+			margin-left: 20px;
+			/*float: right;*/
+			border: 10px solid #ccc;
+		}
+		.box1 {
+			width: 100px;
+			height: 100px;
+			background-color: #ccc;
+		}
+		.
 	</style>
 </head>
 <body>
@@ -155,6 +212,44 @@
 				<button @click="viewItem">显示</button>
 			</div>
 		</div>
+		<div>
+			<p>v-model</p>
+			<div>
+				<input v-model.number="age" type="number">
+				<input v-model.trim="msg">
+				<button @click="viewItemModel">显示</button>
+			</div>
+		</div>
+		<div class="bfc">
+			<a href="" class="border">inline box</a>
+			<span class="border">inline box</span>
+			<div class="margin_one">block box</div>
+			<div class="margin_two">block box</div>
+			<em>fall love with an astronaut</em>
+			<i>fall love with an astronaut</i>
+			<b>fall love with an astronaut</b>
+			<strong>fall love with an astronaut</strong>
+			<div class="box">
+				<div class="absolute_box">absolute box
+				   <div>子盒子</div>
+				</div>
+				<div class="other_box">定位外的其他盒子</div>
+			</div>
+			<div class="box">
+				<div class="float_box">float box
+				   <div>子盒子</div>
+				</div>
+				<!-- <div class="other_box">bfc外盒子</div> -->
+				<span>bfc外盒子 inline box</span>
+			</div>
+			<div class="box1">
+				<div class="float_box1">float box
+				   <div>子盒子</div>
+				</div>
+				<!-- <div class="other_box">bfc外盒子</div> -->
+				<span>bfc外盒子 inline box</span>
+			</div>
+		</div>
 	</div>
 </body>
 <script type="text/javascript">
@@ -201,7 +296,9 @@
   			loginType: 'username',
   			items: ['姓名', '性别', '民族'],
   			itemsMethod: ['姓名', '性别', '民族'],
-  			numbers: [ 1, 2, 3, 4, 5 ]
+  			numbers: [ 1, 2, 3, 4, 5 ],
+  			age: 0,
+  			msg: ''
 		},
 		methods: {
 			reverseMessage: function () {
@@ -245,6 +342,10 @@
 			viewItem: function() {
 				var item = window.localStorage.getItem('localItem')
 				console.log(JSON.parse(item || '[]'))
+			},
+			viewItemModel: function() {
+				console.log(this.msg)
+				console.log(this.age)
 			}
 		},
 		computed: {
@@ -260,3 +361,52 @@
 	})
 </script>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.footer-btn {
+  margin-left: 30px;
+  position: fixed;
+  bottom: 5px;
+  width: 690px;
+  height: 94px;
+  border-radius: 10px;
+  background-color: #FF4F00;
+  align-items: center;
+}
+
+.btn-text {
+  color: #ffffff;
+  font-size: 34px;
+  line-height: 94px;
+}
+
+
+
+
+
+
+
+<div class="footer-btn" @click="mBtnFooterClick">
+        <text class="btn-text">确认覆盖</text>
+      </div>

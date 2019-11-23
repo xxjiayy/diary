@@ -42,7 +42,7 @@ export default class Watcher {
   constructor (
     vm: Component,
     expOrFn: string | Function, // 表达式
-    cb: Function, // 跟新数据的回调
+    cb: Function, // 跟新数据的回调，通过数据代理，数据代理的get触发数据劫持的get
     options?: Object
   ) {
     this.vm = vm
@@ -99,7 +99,7 @@ export default class Watcher {
     }
     this.value = this.lazy
       ? undefined
-      : this.get()
+      : this.get()  // 得到表达式的初始值
   }
 
   /**
@@ -184,7 +184,7 @@ export default class Watcher {
     if (this.lazy) {
       this.dirty = true
     } else if (this.sync) {
-      this.run()
+      this.run() // 滚动数据
     } else {
       queueWatcher(this)
     }
@@ -215,7 +215,7 @@ export default class Watcher {
             handleError(e, this.vm, `callback for watcher "${this.expression}"`)
           }
         } else {
-          this.cb.call(this.vm, value, oldValue)
+          this.cb.call(this.vm, value, oldValue) // 回调函数，刷新页面
         }
       }
     }
